@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -55,7 +56,7 @@ body{background:#0d1b2a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 .score-bar{display:flex;align-items:center;gap:12px;background:#111e2e;border:1px solid #1e3148;border-radius:10px;padding:12px 16px;margin-bottom:8px}
 .score-light{width:20px;height:20px;border-radius:50%;flex-shrink:0}
 .conclusion{background:#111e2e;border:1px solid #1e3148;border-radius:10px;padding:12px 16px;font-size:12px;color:#b0c4d8;line-height:1.7;margin-bottom:10px}
-.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.btn-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
 .auto-btn{background:#6ec6a0;color:#0d1b2a;border:none;border-radius:8px;padding:10px;font-size:12px;font-weight:600;cursor:pointer}
 .auto-btn:hover{background:#88d4b2}
 .auto-btn:disabled{background:#2a4a3a;color:#4a6a5a;cursor:wait}
@@ -115,6 +116,11 @@ body{background:#0d1b2a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 <div class="btn-row">
   <button class="auto-btn" id="auto-btn" onclick="autoUpdate()">Automatisch bijwerken (live webdata)</button>
   <button class="edit-btn" onclick="toggleEdit()">Handmatig bijwerken</button>
+  <button class="edit-btn" onclick="toggleImport()">JSON plakken</button>
+</div>
+<div class="edit-panel" id="import-panel">
+  <div class="ef"><label>Plak hier het JSON-blok dat Claude in de chat geeft</label><textarea id="import-json" rows="5" placeholder='{"spxa200r": 57.2, "spxa50r": 54.8, ...}'></textarea></div>
+  <button class="save-btn" onclick="importJson()">Importeren</button>
 </div>
 <div class="status-msg" id="status-msg"></div>
 <div class="last-update" id="last-update"></div>
@@ -352,6 +358,21 @@ function saveData(){
     status('Handmatig bijgewerkt en opgeslagen.','ok');
   }
 }
+function toggleImport(){document.getElementById('import-panel').classList.toggle('open');}
+function importJson(){
+  try{
+    const t=document.getElementById('import-json').value;
+    const m=t.match(/\{[\s\S]*\}/);
+    if(!m)throw new Error('Geen JSON gevonden in de geplakte tekst');
+    const d=JSON.parse(m[0]);
+    ['spxa200r','spxa50r','us2y','us10y','vix','cpi','pce','unem','ism','cut','hold','hike'].forEach(k=>{d[k]=Number(d[k]);});
+    if(commitData(d,'JSON import uit chat')){
+      document.getElementById('import-panel').classList.remove('open');
+      document.getElementById('import-json').value='';
+      status('JSON geimporteerd. Delta\u0027s en trendwisselingen zijn berekend t.o.v. de vorige stand.','ok');
+    }
+  }catch(e){status('Import mislukt: '+e.message,'err');}
+}
 function updateLastUpdateLabel(){
   const lu=load('macro_last_update');
   const e=document.getElementById('last-update');
@@ -375,8 +396,10 @@ async function autoUpdate(){
         tools:[{type:'web_search_20250305',name:'web_search'}]
       })
     });
-    if(!response.ok)throw new Error('API antwoordde met status '+response.status);
-    const data=await response.json();
+    const raw=await response.text();
+    if(!response.ok)throw new Error('API status '+response.status+'. Antwoord: '+raw.slice(0,200));
+    let data;
+    try{data=JSON.parse(raw);}catch(e){throw new Error('Antwoord was geen geldige JSON. Eerste 200 tekens: '+raw.slice(0,200));}
     const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
     if(!text)throw new Error('Geen tekstantwoord ontvangen');
     const jsonMatch=text.match(/\{[\s\S]*\}/);
