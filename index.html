@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macro Marktdashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1b2a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.wrap{background:#0d1b2a;color:#e0e6ed;min-height:100vh}
+.topbar{background:#111e2e;border-bottom:1px solid #1e3148;padding:13px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.topbar-title{font-size:12px;font-weight:500;color:#6ec6a0;letter-spacing:.08em;text-transform:uppercase}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-date{font-size:11px;color:#5a7a96}
+.score-pill{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid;font-weight:500}
+.pill-g{background:#1a3a28;color:#6ec6a0;border-color:#2a5a3e}
+.pill-a{background:#3a2e10;color:#e0b060;border-color:#5a4a20}
+.pill-r{background:#3a1a1a;color:#e07070;border-color:#6a2a2a}
+.body{padding:18px 20px;max-width:1100px;margin:0 auto}
+.sec-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5a7a96;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1e3148;display:flex;align-items:center;gap:7px}
+.sec-label::before{content:'';width:3px;height:11px;background:#6ec6a0;border-radius:2px;display:inline-block}
+.sec-gap{margin-bottom:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+@media(max-width:700px){.g4{grid-template-columns:repeat(2,1fr)}.leg-cols{grid-template-columns:1fr !important}.btn-row{grid-template-columns:1fr !important}}
+.card{background:#111e2e;border:1px solid #1e3148;border-radius:10px;padding:12px 14px}
+.card-lbl{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#5a7a96;margin-bottom:4px}
+.card-val{font-size:20px;font-weight:500;line-height:1.1}
+.card-bottom{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dg{color:#6ec6a0}.da{color:#e0b060}.dr{color:#e07070}
+.bg-dg{background:#6ec6a0}.bg-da{background:#e0b060}.bg-dr{background:#e07070}
+.delta-tag{font-size:10px;padding:2px 6px;border-radius:8px;font-weight:500;white-space:nowrap}
+.dt-up{background:#1a3a28;color:#6ec6a0}
+.dt-dn{background:#3a1a1a;color:#e07070}
+.dt-ne{background:#1a2d42;color:#5a7a96}
+.kentering{font-size:10px;padding:3px 9px;border-radius:8px;font-weight:500;background:#3a2200;color:#ffaa44;border:1px solid #664400}
+.spark{width:60px;height:22px;flex-shrink:0}
+.sig-card{background:#111e2e;border:1px solid #1e3148;border-radius:10px;overflow:hidden;margin-bottom:8px}
+.sig-row{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #152030}
+.sig-row:last-child{border-bottom:none}
+.sig-name{font-size:13px;color:#b0c4d8;flex:1}
+.sig-freq{font-size:9px;color:#3a5a78;margin-left:5px}
+.sig-right{display:flex;align-items:center;gap:8px}
+.sig-val{font-size:13px;font-weight:500;min-width:60px;text-align:right}
+.fed-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.fed-pill{background:#0d1b2a;border:1px solid #1e3148;border-radius:8px;padding:9px 10px;text-align:center}
+.fed-lbl{font-size:10px;color:#5a7a96;text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+.fed-val{font-size:16px;font-weight:500}
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 16px}
+.sum-card{background:#0d1b2a;border-radius:8px;padding:9px 11px;border:1px solid #1e3148}
+.sum-lbl{font-size:10px;color:#5a7a96;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.sum-bar{width:100%;height:6px;border-radius:3px;margin-bottom:5px}
+.sum-sub{font-size:11px;color:#b0c4d8;font-weight:500}
+.score-bar{display:flex;align-items:center;gap:12px;background:#111e2e;border:1px solid #1e3148;border-radius:10px;padding:12px 16px;margin-bottom:8px}
+.score-light{width:20px;height:20px;border-radius:50%;flex-shrink:0}
+.conclusion{background:#111e2e;border:1px solid #1e3148;border-radius:10px;padding:12px 16px;font-size:12px;color:#b0c4d8;line-height:1.7;margin-bottom:10px}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.auto-btn{background:#6ec6a0;color:#0d1b2a;border:none;border-radius:8px;padding:10px;font-size:12px;font-weight:600;cursor:pointer}
+.auto-btn:hover{background:#88d4b2}
+.auto-btn:disabled{background:#2a4a3a;color:#4a6a5a;cursor:wait}
+.edit-btn{background:#1a3a28;color:#6ec6a0;border:1px solid #2a5a3e;border-radius:8px;padding:10px;font-size:12px;cursor:pointer}
+.edit-btn:hover{background:#204830}
+.status-msg{font-size:11px;padding:8px 12px;border-radius:8px;margin-bottom:8px;display:none;line-height:1.5}
+.status-ok{background:#0a2a1a;color:#6ec6a0;border:1px solid #2a5a3e}
+.status-err{background:#2a0a0a;color:#e07070;border:1px solid #6a2a2a}
+.status-busy{background:#1a2d42;color:#7a9ab8;border:1px solid #2a4060}
+.edit-panel{background:#0a1520;border:1px solid #2a4060;border-radius:10px;padding:14px;margin-bottom:10px;display:none}
+.edit-panel.open{display:block}
+.eg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ef{display:flex;flex-direction:column;gap:3px}
+.ef label{font-size:10px;color:#5a7a96;text-transform:uppercase;letter-spacing:.07em}
+.ef input,.ef select,.ef textarea{background:#0d1b2a;border:1px solid #2a4060;border-radius:6px;color:#e0e6ed;font-size:12px;padding:5px 7px;width:100%;font-family:inherit}
+.ef textarea{resize:vertical;line-height:1.5}
+.save-btn{background:#6ec6a0;color:#0d1b2a;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:500;cursor:pointer;margin-top:8px}
+.kentering-box{display:none;background:#1a1000;border:1px solid #664400;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px;color:#ffcc77;line-height:1.7}
+.legenda{background:#0a1a2a;border:1px solid #1e3148;border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.leg-title{font-size:11px;font-weight:500;color:#6ec6a0;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #1e3148}
+.leg-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.leg-sec-title{font-size:10px;color:#5a7a96;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.leg-row{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid #0d1b2a}
+.leg-row:last-child{border-bottom:none}
+.leg-dot-wrap{display:flex;align-items:center;gap:5px;min-width:65px;flex-shrink:0}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.leg-kleur{font-size:11px;font-weight:500}
+.leg-tekst{font-size:11px;color:#7a9ab8;line-height:1.5}
+.leg-sub{font-size:10px;color:#3a6a5a;margin-top:2px}
+.leg-ind-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #0d1b2a}
+.leg-ind-row:last-child{border-bottom:none}
+.leg-ind-name{font-size:11px;color:#b0c4d8;min-width:110px;flex-shrink:0;font-weight:500}
+.leg-ind-info{font-size:11px;color:#5a7a96;line-height:1.5}
+.leg-delta-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #0d1b2a}
+.leg-delta-row:last-child{border-bottom:none}
+.leg-delta-tag{font-size:10px;padding:2px 7px;border-radius:6px;font-weight:500;min-width:46px;text-align:center;flex-shrink:0}
+.leg-delta-info{font-size:11px;color:#5a7a96}
+.leg-keten{margin-top:12px;padding-top:12px;border-top:1px solid #1e3148}
+.keten-flow{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:8px}
+.keten-blok{background:#111e2e;border:1px solid #1e3148;border-radius:6px;padding:5px 9px;font-size:10px;color:#b0c4d8;text-align:center}
+.keten-pijl{color:#3a5a78;font-size:13px;padding:0 3px}
+.leg-noot{font-size:10px;color:#3a5a78;margin-top:8px;line-height:1.6}
+.last-update{font-size:10px;color:#3a5a78;text-align:center;margin-top:6px;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="topbar">
+  <span class="topbar-title">Macro Marktdashboard</span>
+  <div class="topbar-right">
+    <span class="topbar-date" id="hdr-date"></span>
+    <span class="score-pill pill-a" id="hdr-badge">Gemengd</span>
+  </div>
+</div>
+<div class="body">
+
+<div class="btn-row">
+  <button class="auto-btn" id="auto-btn" onclick="autoUpdate()">Automatisch bijwerken (live webdata)</button>
+  <button class="edit-btn" onclick="toggleEdit()">Handmatig bijwerken</button>
+</div>
+<div class="status-msg" id="status-msg"></div>
+<div class="last-update" id="last-update"></div>
+
+<div class="sec-gap">
+  <div class="sec-label">Legenda: hoe lees je dit dashboard</div>
+  <div class="legenda">
+    <div class="leg-title">Uitleg stoplichten, deltapijlen en indicatoren</div>
+    <div class="leg-cols">
+      <div>
+        <div class="leg-sec-title">Stoplichten</div>
+        <div class="leg-row"><div class="leg-dot-wrap"><span class="leg-dot bg-dg"></span><span class="leg-kleur dg">Groen</span></div><div><div class="leg-tekst">Gezond, geen actie vereist</div><div class="leg-sub">Indicator zit in normale zone</div></div></div>
+        <div class="leg-row"><div class="leg-dot-wrap"><span class="leg-dot bg-da"></span><span class="leg-kleur da">Geel</span></div><div><div class="leg-tekst">Let op, verhoogde aandacht gewenst</div><div class="leg-sub">Indicator beweegt richting risico</div></div></div>
+        <div class="leg-row"><div class="leg-dot-wrap"><span class="leg-dot bg-dr"></span><span class="leg-kleur dr">Rood</span></div><div><div class="leg-tekst">Risico, actieve waarschuwing</div><div class="leg-sub">Indicator buiten veilige zone</div></div></div>
+        <div class="leg-row"><div class="leg-dot-wrap"><span style="width:10px;height:10px;background:#ffaa44;border-radius:3px;display:inline-block;flex-shrink:0"></span><span class="leg-kleur" style="color:#ffaa44">Oranje</span></div><div><div class="leg-tekst">Trendwisseling, richting veranderd</div><div class="leg-sub">Meer dan 5% beweging of kleurwisseling t.o.v. vorige periode</div></div></div>
+        <div class="leg-sec-title" style="margin-top:14px">Deltapijlen</div>
+        <div class="leg-delta-row"><span class="leg-delta-tag dt-up">+0,25</span><span class="leg-delta-info">Gestegen t.o.v. vorige periode, positief voor deze indicator</span></div>
+        <div class="leg-delta-row"><span class="leg-delta-tag dt-dn">-0,25</span><span class="leg-delta-info">Gedaald t.o.v. vorige periode, negatief voor deze indicator</span></div>
+        <div class="leg-delta-row"><span class="leg-delta-tag dt-ne">nul</span><span class="leg-delta-info">Nauwelijks veranderd, binnen drempelwaarde</span></div>
+        <div class="leg-noot">Let op: voor VIX, rente en inflatie is dalen positief. Voor ISM en marktbreedte is stijgen positief.</div>
+      </div>
+      <div>
+        <div class="leg-sec-title">Indicatoren en drempelwaarden</div>
+        <div class="leg-ind-row"><span class="leg-ind-name">SPXA200R</span><span class="leg-ind-info">Aandelen boven 200-daags gemiddelde.<br><span class="dg">Groen</span> boven 70% / <span class="da">Geel</span> 40-70% / <span class="dr">Rood</span> onder 40%</span></div>
+        <div class="leg-ind-row"><span class="leg-ind-name">SPXA50R</span><span class="leg-ind-info">Aandelen boven 50-daags gemiddelde. Zelfde drempels, reageert sneller.</span></div>
+        <div class="leg-ind-row"><span class="leg-ind-name">RSP/SPY</span><span class="leg-ind-info"><span class="dg">Stijgend</span> = brede rally. <span class="dr">Dalend</span> = alleen megacaps trekken de markt.</span></div>
+        <div class="leg-ind-row"><span class="leg-ind-name">VIX</span><span class="leg-ind-info">Marktangst. <span class="dg">Groen</span> onder 15 / <span class="da">Geel</span> 15-25 / <span class="dr">Rood</span> boven 25</span></div>
+        <div class="leg-ind-row"><span class="leg-ind-name">Yield curve</span><span class="leg-ind-info"><span class="dg">Normaal</span> = positief. <span class="da">Vlak</span> = neutraal. <span class="dr">Inversie</span> = recessiesignaal.</span></div>
+        <div class="leg-ind-row"><span class="leg-ind-name">HY spreads</span><span class="leg-ind-info"><span class="dg">Laag</span> onder 3% / <span class="da">Gemiddeld</span> 3-5% / <span class="dr">Hoog</span> boven 5%</span></div>
+        <div class="leg-ind-row"><span class="leg-ind-name">ISM</span><span class="leg-ind-info"><span class="dg">Boven 50</span> = groei. <span class="dr">Onder 50</span> = krimp. Boven 55 = sterke groei.</span></div>
+        <div class="leg-ind-row"><span class="leg-ind-name">CPI en PCE</span><span class="leg-ind-info">Fed-doel 2%. <span class="dg">Gezond</span> 2-2,5% / <span class="da">Let op</span> 2,5-3,5% / <span class="dr">Te hoog</span> boven 3,5%</span></div>
+        <div class="leg-noot" style="margin-top:10px"><span style="color:#b0c4d8;font-weight:500">Wekelijks:</span> VIX, breedte, rentes, DXY<br><span style="color:#b0c4d8;font-weight:500">Maandelijks:</span> CPI, PCE, ISM, werkloosheid, Fed</div>
+      </div>
+    </div>
+    <div class="leg-keten">
+      <div class="leg-sec-title">Transmissieketen: wat volgt wat?</div>
+      <div class="leg-noot">Signalen lopen door in deze volgorde. Rood vroeg in de keten waarschuwt voor problemen later.</div>
+      <div class="keten-flow">
+        <div class="keten-blok">Yield curve<br><span style="color:#5a7a96;font-size:9px">6-18 mnd voorop</span></div><span class="keten-pijl">&#8594;</span>
+        <div class="keten-blok">Financial conditions<br><span style="color:#5a7a96;font-size:9px">3-6 mnd voorop</span></div><span class="keten-pijl">&#8594;</span>
+        <div class="keten-blok">ISM en inflatie<br><span style="color:#5a7a96;font-size:9px">2-4 mnd voorop</span></div><span class="keten-pijl">&#8594;</span>
+        <div class="keten-blok">Marktbreedte<br><span style="color:#5a7a96;font-size:9px">1-4 wkn voorop</span></div><span class="keten-pijl">&#8594;</span>
+        <div class="keten-blok">Koersen en winsten<br><span style="color:#5a7a96;font-size:9px">Volgend</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec-gap">
+  <div class="sec-label">Marktbreedte <span style="font-size:9px;color:#3a5a78;text-transform:none;letter-spacing:0">/ wekelijkse delta</span></div>
+  <div class="g4">
+    <div class="card"><div class="card-lbl">SPXA200R</div><div class="card-val da" id="v-spxa200r">57,2%</div><div class="card-bottom"><span class="dot bg-da" id="dot-spxa200r"></span><span id="d-spxa200r" class="delta-tag dt-ne">-</span><canvas id="sk-spxa200r" class="spark"></canvas></div></div>
+    <div class="card"><div class="card-lbl">SPXA50R</div><div class="card-val da" id="v-spxa50r">54,8%</div><div class="card-bottom"><span class="dot bg-da" id="dot-spxa50r"></span><span id="d-spxa50r" class="delta-tag dt-ne">-</span><canvas id="sk-spxa50r" class="spark"></canvas></div></div>
+    <div class="card"><div class="card-lbl">RSP/SPY trend</div><div class="card-val dr" id="v-rsp" style="font-size:15px;padding-top:4px">Dalend</div><div class="card-bottom"><span class="dot bg-dr" id="dot-rsp"></span><span id="d-rsp" class="delta-tag dt-ne">-</span></div></div>
+    <div class="card"><div class="card-lbl">Advance/Decline</div><div class="card-val dr" id="v-adl" style="font-size:15px;padding-top:4px">Negatief</div><div class="card-bottom"><span class="dot bg-dr" id="dot-adl"></span><span id="d-adl" class="delta-tag dt-ne">-</span></div></div>
+  </div>
+</div>
+
+<div class="sec-gap">
+  <div class="sec-label">Fed en Rente</div>
+  <div class="fed-row">
+    <div class="fed-pill"><div class="fed-lbl">Verlagen</div><div class="fed-val dg" id="v-cut">1,0%</div></div>
+    <div class="fed-pill"><div class="fed-lbl">Ongewijzigd</div><div class="fed-val da" id="v-hold">99,0%</div></div>
+    <div class="fed-pill"><div class="fed-lbl">Verhogen</div><div class="fed-val dr" id="v-hike">0,0%</div></div>
+  </div>
+  <div class="sig-card">
+    <div class="sig-row"><span class="sig-name">US02Y <span class="sig-freq">wkl</span></span><div class="sig-right"><span class="sig-val da" id="v-us2y">4,13%</span><span id="d-us2y" class="delta-tag dt-ne">-</span><canvas id="sk-us2y" class="spark"></canvas><span class="dot bg-da" id="dot-us2y"></span></div></div>
+    <div class="sig-row"><span class="sig-name">US10Y <span class="sig-freq">wkl</span></span><div class="sig-right"><span class="sig-val da" id="v-us10y">4,56%</span><span id="d-us10y" class="delta-tag dt-ne">-</span><canvas id="sk-us10y" class="spark"></canvas><span class="dot bg-da" id="dot-us10y"></span></div></div>
+    <div class="sig-row"><span class="sig-name">Yield curve 10Y min 2Y <span class="sig-freq">wkl</span></span><div class="sig-right"><span class="sig-val dg" id="v-yc">Normaal</span><span id="d-yc" class="delta-tag dt-ne">-</span><span class="dot bg-dg" id="dot-yc"></span></div></div>
+  </div>
+</div>
+
+<div class="sec-gap">
+  <div class="sec-label">Risico en Volatiliteit</div>
+  <div class="sig-card">
+    <div class="sig-row"><span class="sig-name">VIX marktangst <span class="sig-freq">wkl</span></span><div class="sig-right"><span class="sig-val da" id="v-vix">16,70</span><span id="d-vix" class="delta-tag dt-ne">-</span><canvas id="sk-vix" class="spark"></canvas><span class="dot bg-da" id="dot-vix"></span></div></div>
+    <div class="sig-row"><span class="sig-name">High Yield spreads <span class="sig-freq">wkl</span></span><div class="sig-right"><span class="sig-val da" id="v-hy">Gemiddeld</span><span id="d-hy" class="delta-tag dt-ne">-</span><span class="dot bg-da" id="dot-hy"></span></div></div>
+    <div class="sig-row"><span class="sig-name">Dollar DXY <span class="sig-freq">wkl</span></span><div class="sig-right"><span class="sig-val dg" id="v-dxy">Stijgend</span><span id="d-dxy" class="delta-tag dt-ne">-</span><span class="dot bg-dg" id="dot-dxy"></span></div></div>
+  </div>
+</div>
+
+<div class="sec-gap">
+  <div class="sec-label">Economie <span style="font-size:9px;color:#3a5a78;text-transform:none;letter-spacing:0">/ maandelijkse delta</span></div>
+  <div class="g4">
+    <div class="card"><div class="card-lbl">CPI YoY</div><div class="card-val dr" id="v-cpi">3,8%</div><div class="card-bottom"><span class="dot bg-dr" id="dot-cpi"></span><span id="d-cpi" class="delta-tag dt-ne">-</span><canvas id="sk-cpi" class="spark"></canvas></div></div>
+    <div class="card"><div class="card-lbl">Core PCE YoY</div><div class="card-val da" id="v-pce">3,2%</div><div class="card-bottom"><span class="dot bg-da" id="dot-pce"></span><span id="d-pce" class="delta-tag dt-ne">-</span><canvas id="sk-pce" class="spark"></canvas></div></div>
+    <div class="card"><div class="card-lbl">Werkloosheid</div><div class="card-val da" id="v-unem">4,5%</div><div class="card-bottom"><span class="dot bg-da" id="dot-unem"></span><span id="d-unem" class="delta-tag dt-ne">-</span><canvas id="sk-unem" class="spark"></canvas></div></div>
+    <div class="card"><div class="card-lbl">ISM Manufacturing</div><div class="card-val dg" id="v-ism">52,7</div><div class="card-bottom"><span class="dot bg-dg" id="dot-ism"></span><span id="d-ism" class="delta-tag dt-ne">-</span><canvas id="sk-ism" class="spark"></canvas></div></div>
+  </div>
+</div>
+
+<div class="sec-gap">
+  <div class="sec-label">Totaalscore</div>
+  <div class="score-bar">
+    <span class="score-light bg-da" id="score-light"></span>
+    <div><div style="font-size:14px;font-weight:500;color:#e0e6ed" id="score-text">Gemengd</div><div style="font-size:11px;color:#5a7a96" id="score-week"></div></div>
+    <div id="kentering-badge" style="margin-left:auto;display:none"><span class="kentering">Trendwisseling</span></div>
+  </div>
+  <div class="kentering-box" id="kentering-box"></div>
+  <div class="conclusion" id="v-conclusion">De markt wordt gedragen door enkele megacaps. Dalende RSP/SPY en negatieve A/D-lijn bevestigen smalle breedte. Fed werkt beperkend; CPI op 3,8% sluit renteverlaging uit. VIX en spreads geven geen alarm. Grootste risico: rally rust op smalle basis.</div>
+</div>
+
+<div class="edit-panel" id="edit-panel">
+  <div class="eg">
+    <div class="ef"><label>SPXA200R (%)</label><input type="number" id="e-spxa200r" step="0.1" value="57.2"></div>
+    <div class="ef"><label>SPXA50R (%)</label><input type="number" id="e-spxa50r" step="0.1" value="54.8"></div>
+    <div class="ef"><label>RSP/SPY</label><select id="e-rsp"><option value="stijgend">Stijgend</option><option value="zijwaarts">Zijwaarts</option><option value="dalend" selected>Dalend</option></select></div>
+    <div class="ef"><label>Advance/Decline</label><select id="e-adl"><option value="positief">Positief</option><option value="neutraal">Neutraal</option><option value="negatief" selected>Negatief</option></select></div>
+    <div class="ef"><label>Fed Verlagen (%)</label><input type="number" id="e-cut" step="0.1" value="1.0"></div>
+    <div class="ef"><label>Fed Ongewijzigd (%)</label><input type="number" id="e-hold" step="0.1" value="99.0"></div>
+    <div class="ef"><label>Fed Verhogen (%)</label><input type="number" id="e-hike" step="0.1" value="0.0"></div>
+    <div class="ef"><label>US02Y (%)</label><input type="number" id="e-us2y" step="0.01" value="4.13"></div>
+    <div class="ef"><label>US10Y (%)</label><input type="number" id="e-us10y" step="0.01" value="4.56"></div>
+    <div class="ef"><label>Yield curve</label><select id="e-yc"><option value="normaal" selected>Normaal</option><option value="vlak">Vlak</option><option value="inversie">Inversie</option></select></div>
+    <div class="ef"><label>VIX</label><input type="number" id="e-vix" step="0.01" value="16.70"></div>
+    <div class="ef"><label>HY spreads</label><select id="e-hy"><option value="laag">Laag</option><option value="gemiddeld" selected>Gemiddeld</option><option value="hoog">Hoog</option></select></div>
+    <div class="ef"><label>Dollar DXY</label><select id="e-dxy"><option value="stijgend" selected>Stijgend</option><option value="neutraal">Neutraal</option><option value="dalend">Dalend</option></select></div>
+    <div class="ef"><label>CPI YoY (%)</label><input type="number" id="e-cpi" step="0.1" value="3.8"></div>
+    <div class="ef"><label>Core PCE YoY (%)</label><input type="number" id="e-pce" step="0.1" value="3.2"></div>
+    <div class="ef"><label>Werkloosheid (%)</label><input type="number" id="e-unem" step="0.1" value="4.5"></div>
+    <div class="ef"><label>ISM</label><input type="number" id="e-ism" step="0.1" value="52.7"></div>
+    <div class="ef"><label>Totaalscore</label><select id="e-score"><option value="gezond">Gezond</option><option value="gemengd" selected>Gemengd</option><option value="risico">Verhoogd risico</option></select></div>
+  </div>
+  <div class="ef" style="margin-top:8px"><label>Conclusie</label><textarea id="e-conclusion" rows="3">De markt wordt gedragen door enkele megacaps. Dalende RSP/SPY en negatieve A/D-lijn bevestigen smalle breedte. Fed werkt beperkend; CPI op 3,8% sluit renteverlaging uit. VIX en spreads geven geen alarm. Grootste risico: rally rust op smalle basis.</textarea></div>
+  <button class="save-btn" onclick="saveData()">Opslaan</button>
+</div>
+
+</div>
+</div>
+
+<script>
+const DEFAULTS={spxa200r:57.2,spxa50r:54.8,rsp:'dalend',adl:'negatief',cut:1.0,hold:99.0,hike:0.0,us2y:4.13,us10y:4.56,yc:'normaal',vix:16.70,hy:'gemiddeld',dxy:'stijgend',cpi:3.8,pce:3.2,unem:4.5,ism:52.7,score:'gemengd',conclusion:'De markt wordt gedragen door enkele megacaps. Dalende RSP/SPY en negatieve A/D-lijn bevestigen smalle breedte. Fed werkt beperkend; CPI op 3,8% sluit renteverlaging uit. VIX en spreads geven geen alarm. Grootste risico: rally rust op smalle basis.'};
+let HIST=null;
+const HIST_DEFAULT={spxa200r:[68,62,55,50,44,48,52,57.2],spxa50r:[72,65,55,48,42,46,50,54.8],us2y:[3.9,4.0,4.05,4.1,4.12,4.10,4.11,4.13],us10y:[4.2,4.3,4.35,4.4,4.45,4.50,4.53,4.56],vix:[14,22,35,28,22,19,17.5,16.7],cpi:[2.9,3.1,3.2,3.3,3.5,3.6,3.7,3.8],pce:[2.7,2.8,2.9,3.0,3.1,3.1,3.2,3.2],unem:[4.3,4.3,4.4,4.4,4.5,4.4,4.4,4.5],ism:[48,49,50,51,52,52.4,52.6,52.7]};
+const SC={};
+function mkSpark(id,data,color){const el=document.getElementById(id);if(!el||typeof Chart==='undefined')return;el.width=60;el.height=22;if(SC[id])SC[id].destroy();SC[id]=new Chart(el,{type:'line',data:{labels:data.map((_,i)=>i),datasets:[{data,borderColor:color,borderWidth:1.5,pointRadius:0,tension:0.4,fill:false}]},options:{responsive:false,animation:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}},layout:{padding:2}}});}
+function pushHist(key,val){if(HIST[key]&&typeof val==='number'&&isFinite(val)){const last=HIST[key][HIST[key].length-1];if(last!==val){HIST[key].push(val);if(HIST[key].length>8)HIST[key].shift();}}}
+function drawSparks(){mkSpark('sk-spxa200r',HIST.spxa200r,'#e0b060');mkSpark('sk-spxa50r',HIST.spxa50r,'#e0b060');mkSpark('sk-us2y',HIST.us2y,'#e0b060');mkSpark('sk-us10y',HIST.us10y,'#e0b060');mkSpark('sk-vix',HIST.vix,'#e0b060');mkSpark('sk-cpi',HIST.cpi,'#e07070');mkSpark('sk-pce',HIST.pce,'#e0b060');mkSpark('sk-unem',HIST.unem,'#e0b060');mkSpark('sk-ism',HIST.ism,'#6ec6a0');}
+function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+function nf(v,d){return v.toFixed(d).replace('.',',');}
+function pf(v,d){return nf(v,d)+'%';}
+function getWeek(d){const s=new Date(d.getFullYear(),0,1);return Math.ceil(((d-s)/86400000+s.getDay()+1)/7);}
+function setEl(id,txt){const e=document.getElementById(id);if(e)e.textContent=txt;}
+function setDot(id,cls){const e=document.getElementById(id);if(e)e.className='dot '+cls;}
+const dotCls={normaal:'dg',stijgend:'dg',positief:'dg',laag:'dg',vlak:'da',zijwaarts:'da',neutraal:'da',gemiddeld:'da',inversie:'dr',dalend:'dr',negatief:'dr',hoog:'dr'};
+const bgOf={dg:'bg-dg',da:'bg-da',dr:'bg-dr'};
+const scoreColor={gezond:'bg-dg',gemengd:'bg-da',risico:'bg-dr'};
+const scorePill={gezond:'pill-g',gemengd:'pill-a',risico:'pill-r'};
+const scoreTxt={gezond:'Gezond',gemengd:'Gemengd',risico:'Verhoogd risico'};
+function breadthCls(v){return v>70?'dg':v>=40?'da':'dr';}
+function vixCls(v){return v<15?'dg':v<=25?'da':'dr';}
+function applyDelta(id,curr,prev,inverse,thr){const el=document.getElementById(id);if(!el)return;if(prev===null||prev===undefined){el.textContent='-';el.className='delta-tag dt-ne';return;}const diff=curr-prev;if(Math.abs(diff)<thr){el.textContent='nul';el.className='delta-tag dt-ne';return;}const up=diff>0;const good=inverse?!up:up;el.className='delta-tag '+(good?'dt-up':'dt-dn');el.textContent=(up?'+':'-')+Math.abs(diff).toFixed(2).replace('.',',');}
+function detectKentering(curr,old){if(!old)return[];const alerts=[];const chk=(c,p,lbl,thr)=>{if(typeof c!=='number'||typeof p!=='number')return;const d=c-p;if(Math.abs(d)<thr)return;const pct=Math.abs(d/p)*100;if(pct>5)alerts.push(lbl+': '+(d>0?'+':'')+d.toFixed(2)+' ('+pct.toFixed(0)+'%)');};chk(curr.spxa200r,old.spxa200r,'SPXA200R',0.5);chk(curr.spxa50r,old.spxa50r,'SPXA50R',0.5);chk(curr.vix,old.vix,'VIX',0.5);chk(curr.us10y,old.us10y,'US10Y',0.05);chk(curr.cpi,old.cpi,'CPI',0.1);chk(curr.ism,old.ism,'ISM',0.5);if(curr.rsp!==old.rsp)alerts.push('RSP/SPY: '+old.rsp+' naar '+curr.rsp);if(curr.adl!==old.adl)alerts.push('Advance/Decline: '+old.adl+' naar '+curr.adl);if(curr.yc!==old.yc)alerts.push('Yield curve: '+old.yc+' naar '+curr.yc);if(curr.hy!==old.hy)alerts.push('HY spreads: '+old.hy+' naar '+curr.hy);return alerts;}
+function validate(d){const errs=[];const num=(v,lo,hi,lbl)=>{if(typeof v!=='number'||!isFinite(v)||v<lo||v>hi)errs.push(lbl);};num(d.spxa200r,0,100,'SPXA200R');num(d.spxa50r,0,100,'SPXA50R');num(d.vix,5,90,'VIX');num(d.us2y,0,15,'US02Y');num(d.us10y,0,15,'US10Y');num(d.cpi,-2,15,'CPI');num(d.pce,-2,15,'PCE');num(d.unem,1,25,'Werkloosheid');num(d.ism,25,75,'ISM');if(!['stijgend','zijwaarts','dalend'].includes(d.rsp))errs.push('RSP/SPY');if(!['positief','neutraal','negatief'].includes(d.adl))errs.push('A/D');if(!['normaal','vlak','inversie'].includes(d.yc))errs.push('Yield curve');if(!['laag','gemiddeld','hoog'].includes(d.hy))errs.push('HY');if(!['stijgend','neutraal','dalend'].includes(d.dxy))errs.push('DXY');if(!['gezond','gemengd','risico'].includes(d.score))errs.push('Score');return errs;}
+function render(d,old){
+  const cpiC=d.cpi>3.5?'dr':d.cpi>2.5?'da':'dg';
+  const pceC=d.pce>3.5?'dr':d.pce>2.5?'da':'dg';
+  const uC=d.unem>5?'dr':d.unem>4?'da':'dg';
+  const ismC=d.ism>50?'dg':d.ism>48?'da':'dr';
+  const b200=breadthCls(d.spxa200r),b50=breadthCls(d.spxa50r),vC=vixCls(d.vix);
+  const e200=document.getElementById('v-spxa200r');if(e200){e200.textContent=pf(d.spxa200r,1);e200.className='card-val '+b200;}
+  setDot('dot-spxa200r',bgOf[b200]);
+  const e50=document.getElementById('v-spxa50r');if(e50){e50.textContent=pf(d.spxa50r,1);e50.className='card-val '+b50;}
+  setDot('dot-spxa50r',bgOf[b50]);
+  const rE=document.getElementById('v-rsp');if(rE){rE.textContent=cap(d.rsp);rE.className='card-val '+dotCls[d.rsp];}
+  setDot('dot-rsp',bgOf[dotCls[d.rsp]]);
+  const aE=document.getElementById('v-adl');if(aE){aE.textContent=cap(d.adl);aE.className='card-val '+dotCls[d.adl];}
+  setDot('dot-adl',bgOf[dotCls[d.adl]]);
+  setEl('v-cut',pf(d.cut,1));setEl('v-hold',pf(d.hold,1));setEl('v-hike',pf(d.hike,1));
+  setEl('v-us2y',pf(d.us2y,2));setEl('v-us10y',pf(d.us10y,2));
+  const ycE=document.getElementById('v-yc');if(ycE){ycE.textContent=cap(d.yc);ycE.className='sig-val '+dotCls[d.yc];}
+  setDot('dot-yc',bgOf[dotCls[d.yc]]);
+  const vE=document.getElementById('v-vix');if(vE){vE.textContent=nf(d.vix,2);vE.className='sig-val '+vC;}
+  setDot('dot-vix',bgOf[vC]);
+  const hyE=document.getElementById('v-hy');if(hyE){hyE.textContent=cap(d.hy);hyE.className='sig-val '+dotCls[d.hy];}
+  setDot('dot-hy',bgOf[dotCls[d.hy]]);
+  const dxE=document.getElementById('v-dxy');if(dxE){dxE.textContent=cap(d.dxy);dxE.className='sig-val '+dotCls[d.dxy];}
+  setDot('dot-dxy',bgOf[dotCls[d.dxy]]);
+  const cE=document.getElementById('v-cpi');if(cE){cE.textContent=pf(d.cpi,1);cE.className='card-val '+cpiC;}
+  setDot('dot-cpi',bgOf[cpiC]);
+  const pE=document.getElementById('v-pce');if(pE){pE.textContent=pf(d.pce,1);pE.className='card-val '+pceC;}
+  setDot('dot-pce',bgOf[pceC]);
+  const uE=document.getElementById('v-unem');if(uE){uE.textContent=pf(d.unem,1);uE.className='card-val '+uC;}
+  setDot('dot-unem',bgOf[uC]);
+  const iE=document.getElementById('v-ism');if(iE){iE.textContent=nf(d.ism,1);iE.className='card-val '+ismC;}
+  setDot('dot-ism',bgOf[ismC]);
+  setEl('v-conclusion',d.conclusion);
+  const sl=document.getElementById('score-light');if(sl)sl.className='score-light '+scoreColor[d.score];
+  setEl('score-text',scoreTxt[d.score]);
+  const badge=document.getElementById('hdr-badge');if(badge){badge.textContent=scoreTxt[d.score];badge.className='score-pill '+scorePill[d.score];}
+  const now=new Date();
+  setEl('hdr-date',now.toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'}));
+  setEl('score-week','Week '+getWeek(now)+' / '+now.getFullYear());
+  if(old){
+    applyDelta('d-spxa200r',d.spxa200r,old.spxa200r,false,0.3);
+    applyDelta('d-spxa50r',d.spxa50r,old.spxa50r,false,0.3);
+    applyDelta('d-us2y',d.us2y,old.us2y,true,0.03);
+    applyDelta('d-us10y',d.us10y,old.us10y,true,0.03);
+    applyDelta('d-vix',d.vix,old.vix,true,0.5);
+    applyDelta('d-cpi',d.cpi,old.cpi,true,0.05);
+    applyDelta('d-pce',d.pce,old.pce,true,0.05);
+    applyDelta('d-unem',d.unem,old.unem,true,0.05);
+    applyDelta('d-ism',d.ism,old.ism,false,0.3);
+    const alerts=detectKentering(d,old);
+    const kb=document.getElementById('kentering-badge');
+    const kbox=document.getElementById('kentering-box');
+    if(alerts.length){if(kb)kb.style.display='block';if(kbox){kbox.style.display='block';kbox.innerHTML='<strong style="color:#ffaa44">Trendwisselingen deze periode:</strong><br>'+alerts.map(a=>'- '+a).join('<br>');}}
+    else{if(kb)kb.style.display='none';if(kbox)kbox.style.display='none';}
+  }
+}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function load(k){try{const s=localStorage.getItem(k);return s?JSON.parse(s):null;}catch(e){return null;}}
+function status(msg,type){const e=document.getElementById('status-msg');if(!e)return;e.textContent=msg;e.className='status-msg status-'+type;e.style.display='block';}
+function toggleEdit(){document.getElementById('edit-panel').classList.toggle('open');}
+function fillEditForm(d){const g=id=>document.getElementById(id);if(!g('e-spxa200r'))return;g('e-spxa200r').value=d.spxa200r;g('e-spxa50r').value=d.spxa50r;g('e-rsp').value=d.rsp;g('e-adl').value=d.adl;g('e-cut').value=d.cut;g('e-hold').value=d.hold;g('e-hike').value=d.hike;g('e-us2y').value=d.us2y;g('e-us10y').value=d.us10y;g('e-yc').value=d.yc;g('e-vix').value=d.vix;g('e-hy').value=d.hy;g('e-dxy').value=d.dxy;g('e-cpi').value=d.cpi;g('e-pce').value=d.pce;g('e-unem').value=d.unem;g('e-ism').value=d.ism;g('e-score').value=d.score;g('e-conclusion').value=d.conclusion;}
+function commitData(d,bron){
+  const errs=validate(d);
+  if(errs.length){status('Validatiefout in: '+errs.join(', ')+'. Gegevens niet opgeslagen.','err');return false;}
+  save('macro_prev',load('macro_curr')||DEFAULTS);
+  save('macro_curr',d);
+  save('macro_last_update',{t:new Date().toISOString(),bron:bron});
+  ['spxa200r','spxa50r','vix','us2y','us10y','cpi','pce','unem','ism'].forEach(k=>pushHist(k,d[k]));
+  save('macro_hist',HIST);
+  render(d,load('macro_prev'));
+  drawSparks();
+  fillEditForm(d);
+  updateLastUpdateLabel();
+  return true;
+}
+function saveData(){
+  const g=id=>document.getElementById(id);
+  const d={spxa200r:parseFloat(g('e-spxa200r').value),spxa50r:parseFloat(g('e-spxa50r').value),rsp:g('e-rsp').value,adl:g('e-adl').value,cut:parseFloat(g('e-cut').value),hold:parseFloat(g('e-hold').value),hike:parseFloat(g('e-hike').value),us2y:parseFloat(g('e-us2y').value),us10y:parseFloat(g('e-us10y').value),yc:g('e-yc').value,vix:parseFloat(g('e-vix').value),hy:g('e-hy').value,dxy:g('e-dxy').value,cpi:parseFloat(g('e-cpi').value),pce:parseFloat(g('e-pce').value),unem:parseFloat(g('e-unem').value),ism:parseFloat(g('e-ism').value),score:g('e-score').value,conclusion:g('e-conclusion').value};
+  if(commitData(d,'handmatig')){
+    document.getElementById('edit-panel').classList.remove('open');
+    status('Handmatig bijgewerkt en opgeslagen.','ok');
+  }
+}
+function updateLastUpdateLabel(){
+  const lu=load('macro_last_update');
+  const e=document.getElementById('last-update');
+  if(!e)return;
+  if(lu&&lu.t){const dt=new Date(lu.t);e.textContent='Laatst bijgewerkt: '+dt.toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})+' om '+dt.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})+' ('+(lu.bron||'onbekend')+')';}
+  else{e.textContent='Nog niet bijgewerkt in deze browser.';}
+}
+async function autoUpdate(){
+  const btn=document.getElementById('auto-btn');
+  btn.disabled=true;btn.textContent='Bezig met ophalen van live data...';
+  status('Live webdata wordt opgehaald via Claude met web search. Dit duurt 30 tot 90 seconden.','busy');
+  try{
+    const prompt='Search the web for the most current US market data. Then respond with ONLY a raw JSON object, no markdown, no explanation, exactly these keys: {"spxa200r": number (percent of S&P500 stocks above 200-day moving average), "spxa50r": number (percent above 50-day MA), "rsp": "stijgend"|"zijwaarts"|"dalend" (RSP/SPY equal weight vs cap weight trend last month), "adl": "positief"|"neutraal"|"negatief" (NYSE advance decline line trend), "cut": number, "hold": number, "hike": number (CME FedWatch probabilities in percent for next FOMC meeting, must sum to about 100), "us2y": number (US 2 year treasury yield percent), "us10y": number (US 10 year treasury yield percent), "yc": "normaal"|"vlak"|"inversie" (10y minus 2y: normaal if above 0.2, vlak if -0.1 to 0.2, inversie if below -0.1), "vix": number, "hy": "laag"|"gemiddeld"|"hoog" (ICE BofA HY OAS: laag under 3, gemiddeld 3-5, hoog above 5), "dxy": "stijgend"|"neutraal"|"dalend" (dollar index trend last month), "cpi": number (latest US CPI YoY percent), "pce": number (latest core PCE YoY percent), "unem": number (latest US unemployment rate percent), "ism": number (latest ISM Manufacturing PMI), "score": "gezond"|"gemengd"|"risico" (your overall assessment), "conclusion": string (Dutch, max 60 words, explain market breadth, Fed stance, biggest risk)}. If a value cannot be found, use your best estimate from the most recent available data.';
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}],
+        tools:[{type:'web_search_20250305',name:'web_search'}]
+      })
+    });
+    if(!response.ok)throw new Error('API antwoordde met status '+response.status);
+    const data=await response.json();
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    if(!text)throw new Error('Geen tekstantwoord ontvangen');
+    const jsonMatch=text.match(/\{[\s\S]*\}/);
+    if(!jsonMatch)throw new Error('Geen JSON gevonden in antwoord');
+    const clean=jsonMatch[0].replace(/```json|```/g,'').trim();
+    const d=JSON.parse(clean);
+    ['spxa200r','spxa50r','us2y','us10y','vix','cpi','pce','unem','ism','cut','hold','hike'].forEach(k=>{d[k]=Number(d[k]);});
+    if(commitData(d,'automatisch, live webdata')){
+      status('Live data opgehaald en verwerkt. Controleer de waarden; bronnen uit webzoekresultaten kunnen enkele uren oud zijn en SPXA50R of RSP/SPY kunnen schattingen zijn.','ok');
+    }
+  }catch(err){
+    status('Automatisch bijwerken mislukt: '+err.message+'. Dit werkt alleen in de claude.ai artifact-weergave, niet in een lokaal geopend bestand. Gebruik dan Handmatig bijwerken.','err');
+  }finally{
+    btn.disabled=false;btn.textContent='Automatisch bijwerken (live webdata)';
+  }
+}
+HIST=load('macro_hist')||JSON.parse(JSON.stringify(HIST_DEFAULT));
+const curr=load('macro_curr')||DEFAULTS;
+const prev=load('macro_prev');
+render(curr,prev);
+drawSparks();
+fillEditForm(curr);
+updateLastUpdateLabel();
+</script>
+</body>
+</html>
